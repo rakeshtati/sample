@@ -9,12 +9,12 @@ import urllib.error
 
 # Your Digital Ocean Agent configuration
 AGENT_ENDPOINT = os.getenv("AGENT_ENDPOINT", "https://agent-ac90c60eec7af7997858-wur6b.ondigitalocean.app/api/v1/chat/completions")
-AGENT_ACCESS_KEY = os.getenv("AGENT_ACCESS_KEY", "6_WDRN-yATG7NGl3-dfUqtk3xhkaDE-N")
+AGENT_ACCESS_KEY = os.getenv("AGENT_ACCESS_KEY", "your-access-key")
 
 class AgentHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
-        # Serve a simple HTML page with information about the agent API
-        if self.path == '/':
+        # Serve a simple HTML page with the chatbot embed
+        if self.path == '/' or self.path == '/index.html':
             self.send_response(HTTPStatus.OK)
             self.send_header('Content-Type', 'text/html')
             self.end_headers()
@@ -23,23 +23,39 @@ class AgentHandler(http.server.SimpleHTTPRequestHandler):
             <!DOCTYPE html>
             <html>
             <head>
-                <title>DO GenAI Agent API</title>
+                <title>SAP Security Agent Chatbot</title>
                 <style>
                     body {{ font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }}
                     pre {{ background-color: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto; }}
+                    .api-section {{ margin-top: 40px; }}
                 </style>
             </head>
             <body>
-                <h1>Digital Ocean GenAI Agent API</h1>
-                <p>This server forwards requests to your Digital Ocean GenAI agent.</p>
-                <h2>Usage:</h2>
-                <p>Send a POST request to <code>/ask</code> with a JSON body containing your question:</p>
-                <pre>
-{{
-  "message": "What is the capital of France?"
-}}
-                </pre>
-                <p>The agent will process your question and return a response.</p>
+                <h1>SAP Security Agent Chatbot</h1>
+                <p>Use the chatbot in the bottom-right corner to interact with your SAP Security expert agent.</p>
+                
+                <div class="api-section">
+                    <h2>API Usage:</h2>
+                    <p>You can also send requests programmatically:</p>
+                    <pre>
+curl -X POST {self.server.server_address[0]}:{self.server.server_address[1]}/ask \\
+  -H "Content-Type: application/json" \\
+  -d '{{"message": "How do I set up SAP GRC?"}}'
+                    </pre>
+                </div>
+                
+                <!-- Digital Ocean Chatbot Embed -->
+                <script async
+                  src="https://agent-ac90c60eec7af7997858-wur6b.ondigitalocean.app/static/chatbot/widget.js"
+                  data-agent-id="aba091df-018b-11f0-bf8f-4e013e2ddde4"
+                  data-chatbot-id="7iL_BYEySLkSDxmXL0hs6-9FT35_i7eV"
+                  data-name="SAP Security Agent Chatbot"
+                  data-primary-color="#031B4E"
+                  data-secondary-color="#E5E8ED"
+                  data-button-background-color="#0061EB"
+                  data-starting-message="Hello!Ask me anything about SAP Security"
+                  data-logo="/static/chatbot/icons/default-agent.svg">
+                </script>
             </body>
             </html>
             """
@@ -95,6 +111,7 @@ class AgentHandler(http.server.SimpleHTTPRequestHandler):
                     # Return the agent's response
                     self.send_response(HTTPStatus.OK)
                     self.send_header('Content-Type', 'application/json')
+                    self.send_header('Access-Control-Allow-Origin', '*')  # Add CORS support
                     self.end_headers()
                     self.wfile.write(agent_response)
                     
@@ -122,10 +139,19 @@ class AgentHandler(http.server.SimpleHTTPRequestHandler):
             self.send_response(HTTPStatus.NOT_FOUND)
             self.end_headers()
             self.wfile.write(b'Not Found')
+    
+    def do_OPTIONS(self):
+        # Handle OPTIONS requests for CORS
+        self.send_response(HTTPStatus.OK)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.end_headers()
 
 # Make the server accessible from outside
 port = int(os.getenv('PORT', 80))
 print(f'Starting server on port {port}')
-print(f'Access the agent through the /ask endpoint')
+print(f'Visit http://your-server-ip:{port}/ to see the SAP Security chatbot')
+print(f'API endpoint available at http://your-server-ip:{port}/ask')
 httpd = socketserver.TCPServer(('0.0.0.0', port), AgentHandler)
 httpd.serve_forever()
